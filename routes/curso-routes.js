@@ -85,4 +85,32 @@ router.put('/asignatura/:asignacionId', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/mis-asignaciones   body: { cursoId, asignatura }
+// Autoservicio: deja que el profesor JEFE de un curso registre él mismo una
+// asignatura dentro de SU propio curso (equivalente a lo que ya hace
+// POST /api/asignaciones con ADMIN_KEY, pero sin admin de por medio y
+// restringido a cursos donde quien llama es el jefe).
+router.post('/mis-asignaciones', requireAuth, async (req, res) => {
+  const { cursoId, asignatura } = req.body || {};
+  const cursoIdNum = parseInt(cursoId, 10);
+  if (!cursoIdNum || !asignatura) {
+    return res.status(400).json({ error: 'cursoId y asignatura son obligatorios.' });
+  }
+  const esJefe = await esJefeDelCurso(req.profesor.id, cursoIdNum);
+  if (!esJefe) {
+    return res.status(403).json({ error: 'Solo el profesor jefe de este curso puede registrar asignaturas ahí.' });
+  }
+
+  const { rows } = await pool.query(
+    `INSERT INTO asignaciones (profesor_id, curso_id, asignatura) VALUES ($1, $2, $3)
+     ON CONFLICT (curso_id, asignatura) DO UPDATE SET profesor_id = asignaciones.profesor_id
+     RETURNING id, profesor_id, curso_id, asignatura`,
+    [req.profesor.id, cursoIdNum, asignatura.trim()]
+  );
+  if (rows[0].profesor_id !== req.profesor.id) {
+    return res.status(409).json({ error: 'Esa asignatura ya la dicta otro profesor.' });
+  }
+  res.json({ asignacion: rows[0] });
+});
+
 module.exports = router;
