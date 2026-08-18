@@ -1,0 +1,19 @@
+{
+  "name": "libro-notas-backend",
+  "version": "1.0.0",
+  "description": "Backend para Libro de Notas: profesores, cursos, asignaturas y exportación",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "docx": "^9.0.2"
+  }
+}
